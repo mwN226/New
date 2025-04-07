@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JHA App – Clean Version</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { color: #002d56; }
+    button {
+      background-color: #0055a4;
+      color: white;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    button:hover { background-color: #003f7d; }
+    select, textarea, input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .hazard-block {
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    #output {
+      background: #e9f0ff;
+      padding: 15px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      border: 1px solid #99c;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Linkforce JHA Generator</h2>
+
+<label>Job Step:</label>
+<input type="text" id="jobStep" placeholder="e.g. Lock on / Sign on" />
+
+<div id="hazardsContainer"></div>
+<button id="addHazardBtn" type="button">+ Add Hazard/Control</button>
+<br>
+<button id="generateBtn" type="button">Generate JHA</button>
+
+<h3>Generated JHA Output:</h3>
+<div id="output">JHA will appear here...</div>
+
+<script>
+  const hazardData = {
+    isolation: {
+      risk: "Locking onto incorrect permit may result in serious injury or damage.",
+      controls: ["Lock on as a team", "Verify asset IDs", "Ask if unsure"]
+    },
+    manual_handling: {
+      risk: "Improper lifting can cause strain or dropped object injuries.",
+      controls: ["Use correct technique", "Ask for help", "Use mechanical aids"]
+    },
+    pinch_points: {
+      risk: "Hands may get caught in moving parts, causing injury.",
+      controls: ["Keep hands clear", "Use tools instead of hands"]
+    }
+  };
+
+  function addHazard() {
+    const container = document.getElementById("hazardsContainer");
+
+    const block = document.createElement("div");
+    block.className = "hazard-block";
+
+    const hazardOptions = Object.keys(hazardData)
+      .map(k => `<option value="${k}">${k.replace(/_/g, " ")}</option>`)
+      .join("");
+
+    block.innerHTML = `
+      <label>Hazard:</label>
+      <select class="hazardSelect">
+        <option value="">-- Select --</option>
+        ${hazardOptions}
+      </select>
+      <label>Auto Risk Description:</label>
+      <textarea class="riskText" readonly></textarea>
+      <label>Controls:</label>
+      <select class="controlSelect" multiple size="4"></select>
+    `;
+
+    container.appendChild(block);
+  }
+
+  function updateHazardDropdowns() {
+    document.querySelectorAll(".hazardSelect").forEach(select => {
+      select.addEventListener("change", function () {
+        const value = this.value;
+        const block = this.closest(".hazard-block");
+        const riskText = block.querySelector(".riskText");
+        const controlBox = block.querySelector(".controlSelect");
+
+        if (hazardData[value]) {
+          riskText.value = hazardData[value].risk;
+          controlBox.innerHTML = "";
+          hazardData[value].controls.forEach(ctrl => {
+            const opt = document.createElement("option");
+            opt.textContent = ctrl;
+            controlBox.appendChild(opt);
+          });
+        } else {
+          riskText.value = "";
+          controlBox.innerHTML = "";
+        }
+      });
+    });
+  }
+
+  function generateOutput() {
+    const step = document.getElementById("jobStep").value;
+    let result = `Job Step: ${step}
+`;
+
+    document.querySelectorAll(".hazard-block").forEach((block, index) => {
+      const risk = block.querySelector(".riskText").value;
+      const selected = Array.from(block.querySelector(".controlSelect").selectedOptions).map(opt => opt.value);
+      result += `
+Hazard ${index + 1}:
+${risk}
+Controls:
+${selected.map(c => "- " + c).join("
+")}
+`;
+    });
+
+    document.getElementById("output").textContent = result.trim();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("addHazardBtn").addEventListener("click", () => {
+      addHazard();
+      updateHazardDropdowns();
+    });
+    document.getElementById("generateBtn").addEventListener("click", generateOutput);
+    addHazard();
+    updateHazardDropdowns();
+  });
+</script>
+
+</body>
+</html>
